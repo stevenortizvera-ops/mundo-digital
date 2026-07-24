@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin — Mundo Digital</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+    <style>
+        :root {
+            --bg: #0a0a0f; --surface: #111118; --card: #18181f;
+            --border: rgba(255,255,255,0.08); --border-light: rgba(255,255,255,0.15);
+            --text: #ffffff; --text-2: #a1a1aa; --text-3: #52525b;
+            --accent: #0071e3; --accent-glow: rgba(0,113,227,0.3);
+            --green: #22c55e; --red: #ef4444; --yellow: #f59e0b;
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+        /* LOGIN */
+        #loginScreen { position: fixed; inset: 0; z-index: 1000; background: radial-gradient(ellipse at 50% 0%, rgba(0,113,227,0.15) 0%, var(--bg) 70%); display: flex; align-items: center; justify-content: center; }
+        #loginScreen.hidden { display: none; }
+        .login-box { background: var(--surface); border: 1px solid var(--border-light); border-radius: 28px; padding: 2.5rem; width: 100%; max-width: 400px; box-shadow: 0 40px 80px rgba(0,0,0,0.6); text-align: center; }
+        .login-logo { width: 56px; height: 56px; background: var(--accent); border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 8px 24px var(--accent-glow); }
+        .login-box h1 { font-size: 1.5rem; margin-bottom: 0.4rem; }
+        .login-box p { color: var(--text-2); font-size: 0.9rem; margin-bottom: 2rem; }
+
+        /* FORMS */
+        .form-group { margin-bottom: 1rem; text-align: left; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-2); margin-bottom: 0.5rem; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--border-light);
+            border-radius: 12px; color: var(--text); font-family: inherit; font-size: 0.95rem;
+            padding: 0.75rem 1rem; transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+        .form-group textarea { resize: vertical; min-height: 80px; }
+        .form-group select option { background: #1a1a2e; }
+        #loginError { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; border-radius: 10px; padding: 0.6rem 1rem; font-size: 0.85rem; margin-bottom: 1rem; display: none; }
+
+        /* BUTTONS */
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.75rem 1.4rem; border-radius: 999px; font-family: inherit; font-weight: 600; font-size: 0.9rem; cursor: pointer; border: none; transition: all 0.25s var(--ease); white-space: nowrap; text-decoration: none; }
+        .btn-primary { background: var(--accent); color: white; box-shadow: 0 4px 14px var(--accent-glow); }
+        .btn-primary:hover { background: #0077ed; transform: translateY(-2px); }
+        .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border-light); }
+        .btn-outline:hover { border-color: white; background: rgba(255,255,255,0.06); }
+        .btn-danger { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+        .btn-danger:hover { background: rgba(239,68,68,0.2); }
+        .btn-success { background: rgba(34,197,94,0.1); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+        .btn-success:hover { background: rgba(34,197,94,0.2); }
+        .btn-warning { background: rgba(245,158,11,0.1); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2); }
+        .btn-warning:hover { background: rgba(245,158,11,0.2); }
+        .btn-sm { padding: 0.4rem 0.9rem; font-size: 0.8rem; }
+        .btn-full { width: 100%; }
+
+        /* LAYOUT */
+        #adminApp { display: none; }
+        #adminApp.visible { display: block; }
+        .topbar-admin { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+        .topbar-admin .brand { display: flex; align-items: center; gap: 0.75rem; font-weight: 700; font-size: 1.1rem; }
+        .brand-badge { background: rgba(0,113,227,0.15); border: 1px solid rgba(0,113,227,0.3); color: var(--accent); font-size: 0.7rem; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 99px; letter-spacing: 0.05em; }
+        .main-content { padding: 2rem; max-width: 1200px; margin: 0 auto; }
+
+        /* STATS */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.25rem; display: flex; align-items: center; gap: 0.85rem; }
+        .stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+        .stat-icon.blue { background: rgba(0,113,227,0.15); }
+        .stat-icon.green { background: rgba(34,197,94,0.15); }
+        .stat-icon.yellow { background: rgba(245,158,11,0.15); }
+        .stat-icon.red { background: rgba(239,68,68,0.15); }
+        .stat-icon.purple { background: rgba(139,92,246,0.15); }
+        .stat-value { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+        .stat-label { font-size: 0.75rem; color: var(--text-2); margin-top: 0.2rem; }
+
+        /* TABLE */
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
+        .section-header h2 { font-size: 1.25rem; font-weight: 700; }
+        .search-wrap { position: relative; }
+        .search-wrap input { background: var(--card); border: 1px solid var(--border); color: var(--text); border-radius: 999px; padding: 0.6rem 1rem 0.6rem 2.5rem; font-family: inherit; font-size: 0.9rem; outline: none; width: 220px; transition: border-color 0.2s; }
+        .search-wrap input:focus { border-color: var(--accent); }
+        .search-icon { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-3); }
+        .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        thead { background: rgba(255,255,255,0.03); }
+        th { padding: 0.9rem 1rem; text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border); }
+        td { padding: 0.85rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.88rem; vertical-align: middle; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+        .product-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: contain; background: white; padding: 3px; }
+        .product-thumb-placeholder { width: 44px; height: 44px; border-radius: 8px; background: var(--surface); border: 1px dashed var(--border-light); display: flex; align-items: center; justify-content: center; color: var(--text-3); font-size: 1.1rem; }
+        .badge { display: inline-flex; align-items: center; padding: 0.15rem 0.55rem; border-radius: 99px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+        .badge-oferta { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .badge-bestseller { background: rgba(245,158,11,0.15); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+        .badge-laptop { background: rgba(0,113,227,0.15); color: #60a5fa; border: 1px solid rgba(0,113,227,0.3); }
+        .badge-pc { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.2); }
+        .badge-premium { background: rgba(139,92,246,0.15); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+        .badge-agotado { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.5); }
+        .actions-cell { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+        .empty-state { text-align: center; padding: 4rem 1rem; color: var(--text-2); }
+        .empty-state .empty-icon { font-size: 3rem; margin-bottom: 1rem; display: block; }
+        .price-text { font-weight: 700; }
+        .old-price-text { font-size: 0.75rem; color: var(--text-3); text-decoration: line-through; }
+
+        /* Stock toggle */
+        .stock-toggle { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+        .toggle-track { width: 36px; height: 20px; border-radius: 99px; background: rgba(239,68,68,0.3); border: 1px solid rgba(239,68,68,0.5); position: relative; transition: background 0.25s; cursor: pointer; }
+        .toggle-track.on { background: rgba(34,197,94,0.3); border-color: rgba(34,197,94,0.5); }
+        .toggle-thumb { width: 14px; height: 14px; border-radius: 50%; background: #ef4444; position: absolute; top: 2px; left: 2px; transition: all 0.25s; }
+        .toggle-track.on .toggle-thumb { background: #22c55e; left: 18px; }
+        .toggle-label { font-size: 0.78rem; font-weight: 600; color: #ef4444; }
+        .toggle-track.on + .toggle-label { color: #22c55e; }
+
+        /* Visitas badge */
+        .visits-badge { display: inline-flex; align-items: center; gap: 0.25rem; background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.2); color: #a78bfa; border-radius: 99px; padding: 0.15rem 0.5rem; font-size: 0.75rem; font-weight: 600; }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.25s var(--ease); }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal { background: var(--surface); border: 1px solid var(--border-light); border-radius: 24px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; padding: 2rem; transform: scale(0.95) translateY(16px); transition: transform 0.3s var(--ease); box-shadow: 0 40px 80px rgba(0,0,0,0.7); }
+        .modal-overlay.active .modal { transform: scale(1) translateY(0); }
+        .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+        .modal-header h3 { font-size: 1.2rem; font-weight: 700; }
+        .modal-close { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 1px solid var(--border); color: white; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+        .modal-close:hover { background: rgba(255,255,255,0.15); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-footer { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
+
+        /* Spec tags */
+        .tags-wrap { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
+        .tag { background: rgba(0,113,227,0.15); border: 1px solid rgba(0,113,227,0.3); color: #60a5fa; border-radius: 99px; padding: 0.2rem 0.6rem; font-size: 0.8rem; display: flex; align-items: center; gap: 0.35rem; }
+        .tag-remove { cursor: pointer; opacity: 0.6; font-size: 0.75rem; transition: opacity 0.2s; }
+        .tag-remove:hover { opacity: 1; color: #f87171; }
+        .tag-input-row { display: flex; gap: 0.5rem; }
+        .tag-input-row input { flex: 1; }
+
+        /* Confirm */
+        .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 1rem; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+        .confirm-overlay.active { opacity: 1; pointer-events: auto; }
+        .confirm-box { background: var(--surface); border: 1px solid rgba(239,68,68,0.3); border-radius: 20px; padding: 2rem; width: 100%; max-width: 360px; text-align: center; transform: scale(0.95); transition: transform 0.2s var(--ease); }
+        .confirm-overlay.active .confirm-box { transform: scale(1); }
+        .confirm-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+        .confirm-box h3 { font-size: 1.15rem; margin-bottom: 0.5rem; }
+        .confirm-box p { color: var(--text-2); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+        /* Toast */
+        #toast { position: fixed; bottom: 2rem; right: 2rem; z-index: 999; background: var(--surface); border: 1px solid var(--border-light); border-radius: 14px; padding: 0.85rem 1.25rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 12px 32px rgba(0,0,0,0.5); transform: translateY(120%); opacity: 0; transition: transform 0.4s var(--ease), opacity 0.4s; font-size: 0.9rem; font-weight: 500; }
+        #toast.show { transform: translateY(0); opacity: 1; }
+
+        /* Visitas modal */
+        .visits-chart { display: flex; flex-direction: column; gap: 0.75rem; max-height: 60vh; overflow-y: auto; padding: 0.25rem; }
+        .visit-row { display: flex; align-items: center; gap: 1rem; }
+        .visit-bar-wrap { flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; }
+        .visit-bar { height: 100%; background: linear-gradient(90deg, var(--accent), #7c3aed); border-radius: 99px; transition: width 0.6s var(--ease); }
+        .visit-name { font-size: 0.82rem; color: var(--text-2); width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .visit-count { font-size: 0.82rem; font-weight: 700; color: #a78bfa; width: 30px; text-align: right; }
+
+        @media (max-width: 768px) { .topbar-admin { padding: 1rem; } .main-content { padding: 1rem; } .form-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div id="loginScreen">
+    <div class="login-box">
+        <div class="login-logo">🔐</div>
+        <h1>Panel de Administración</h1>
+        <p>Mundo Digital — Gestión de Catálogo</p>
+        <div id="loginError">Contraseña incorrecta. Inténtalo de nuevo.</div>
+        <div class="form-group">
+            <label>Contraseña</label>
+            <input type="password" id="passwordInput" placeholder="Ingresa tu contraseña" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary btn-full" onclick="doLogin()" style="margin-top:0.5rem;">Entrar al Panel</button>
+        <p style="margin-top:1.25rem;font-size:0.78rem;color:var(--text-3);">
+            Contraseña por defecto: <code style="color:var(--text-2);background:rgba(255,255,255,0.06);padding:0.15rem 0.4rem;border-radius:4px;">admin123</code>
+        </p>
+    </div>
+</div>
+
+<div id="adminApp">
+    <div class="topbar-admin">
+        <div class="brand">
+            <span style="font-size:1.4rem;">💻</span> Mundo Digital
+            <span class="brand-badge">ADMIN</span>
+        </div>
+        <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-warning btn-sm" onclick="openVisitsModal()">📊 Ver Visitas</button>
+            <a href="index.html" target="_blank" class="btn btn-outline btn-sm">👁 Ver Tienda</a>
+            <button onclick="doLogout()" class="btn btn-outline btn-sm">Cerrar sesión</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card"><div class="stat-icon blue">📦</div><div><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total productos</div></div></div>
+            <div class="stat-card"><div class="stat-icon blue">💻</div><div><div class="stat-value" id="statLaptops">0</div><div class="stat-label">Laptops</div></div></div>
+            <div class="stat-card"><div class="stat-icon green">🖥️</div><div><div class="stat-value" id="statPCs">0</div><div class="stat-label">PCs Escritorio</div></div></div>
+            <div class="stat-card"><div class="stat-icon red">🏷️</div><div><div class="stat-value" id="statOfertas">0</div><div class="stat-label">En oferta</div></div></div>
+            <div class="stat-card"><div class="stat-icon red">❌</div><div><div class="stat-value" id="statAgotados">0</div><div class="stat-label">Agotados</div></div></div>
+            <div class="stat-card"><div class="stat-icon purple">👁</div><div><div class="stat-value" id="statVisitas">0</div><div class="stat-label">Visitas totales</div></div></div>
+        </div>
+
+        <div class="section-header">
+            <h2>Catálogo de Productos</h2>
+            <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+                <div class="search-wrap">
+                    <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    <input type="text" id="searchInput" placeholder="Buscar..." oninput="renderTable()">
+                </div>
+                <button class="btn btn-primary" onclick="openProductModal()">+ Agregar Producto</button>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Categoría</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                        <th>Visitas</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="productTableBody"></tbody>
+            </table>
+        </div>
+
+        <div style="margin-top:1.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" onclick="exportData()">⬇️ Exportar JSON</button>
+            <label class="btn btn-outline btn-sm" style="cursor:pointer;">⬆️ Importar JSON<input type="file" accept=".json" onchange="importData(event)" style="display:none;"></label>
+            <button class="btn btn-success btn-sm" onclick="publishToSite()">🚀 Publicar en la Tienda</button>
+        </div>
+        <p style="color:var(--text-3);font-size:0.78rem;margin-top:0.75rem;">💡 Después de cualquier cambio, presiona <b>🚀 Publicar</b> para que la tienda se actualice.</p>
+    </div>
+</div>
+
+<!-- MODAL AGREGAR / EDITAR -->
+<div class="modal-overlay" id="productModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="modalTitle">Agregar Producto</h3>
+            <button class="modal-close" onclick="closeProductModal()">✕</button>
+        </div>
+        <input type="hidden" id="editId">
+        <div class="form-group">
+            <label>Nombre del producto *</label>
+            <input type="text" id="f_title" placeholder="Ej: Dell Latitude 5400 i7 8va Gen">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Precio actual (S/) *</label>
+                <input type="number" id="f_price" placeholder="950" min="0" step="1">
+            </div>
+            <div class="form-group">
+                <label>Precio tachado (S/) — opcional</label>
+                <input type="number" id="f_originalPrice" placeholder="Dejar en blanco si no aplica">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Categoría *</label>
+                <select id="f_cat">
+                    <option value="laptop">Laptop</option>
+                    <option value="pc">PC de escritorio</option>
+                    <option value="laptop,premium">Laptop — Gama Alta</option>
+                    <option value="pc,premium">PC — Gama Alta</option>
+                    <option value="laptop,oferta">Laptop — Oferta</option>
+                    <option value="pc,oferta">PC — Oferta</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Etiqueta (badge)</label>
+                <select id="f_badge">
+                    <option value="">Sin etiqueta</option>
+                    <option value="oferta">🏷️ OFERTA</option>
+                    <option value="bestseller">⭐ BESTSELLER</option>
+                    <option value="nuevo">🆕 NUEVO</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Estado de stock</label>
+            <select id="f_stock">
+                <option value="1">✅ Disponible</option>
+                <option value="0">❌ Agotado</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>URL de la imagen *</label>
+            <input type="url" id="f_img" placeholder="https://...">
+            <div id="imgPreviewWrap" style="margin-top:0.5rem;display:none;">
+                <img id="imgPreview" src="" alt="Vista previa" style="height:80px;border-radius:8px;background:white;padding:4px;object-fit:contain;">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Especificaciones técnicas</label>
+            <div class="tags-wrap" id="specTags"></div>
+            <div class="tag-input-row">
+                <input type="text" id="specInput" placeholder="Ej: Intel Core i7-8va — presiona Enter">
+                <button class="btn btn-outline btn-sm" onclick="addSpec()">+ Agregar</button>
+            </div>
+        </div>
+        <div id="formError" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;border-radius:10px;padding:0.6rem 1rem;font-size:0.85rem;display:none;margin-top:0.5rem;"></div>
+        <div class="form-footer">
+            <button class="btn btn-outline" onclick="closeProductModal()">Cancelar</button>
+            <button class="btn btn-primary" onclick="saveProduct()">Guardar Producto</button>
+        </div>
+    </div>
+</div>
+
+<!-- CONFIRM ELIMINAR -->
+<div class="confirm-overlay" id="confirmOverlay">
+    <div class="confirm-box">
+        <span class="confirm-icon">🗑️</span>
+        <h3>¿Eliminar producto?</h3>
+        <p id="confirmText">Esta acción no se puede deshacer.</p>
+        <div style="display:flex;gap:0.75rem;justify-content:center;">
+            <button class="btn btn-outline" onclick="closeConfirm()">Cancelar</button>
+            <button class="btn btn-danger" onclick="confirmDelete()">Sí, eliminar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL VISITAS -->
+<div class="modal-overlay" id="visitsModal">
+    <div class="modal" style="max-width:480px;">
+        <div class="modal-header">
+            <h3>📊 Contador de Visitas por Producto</h3>
+            <button class="modal-close" onclick="closeVisitsModal()">✕</button>
+        </div>
+        <p style="color:var(--text-2);font-size:0.85rem;margin-bottom:1.25rem;">Número de veces que cada producto fue abierto en la tienda.</p>
+        <div class="visits-chart" id="visitsChart"></div>
+        <div class="form-footer">
+            <button class="btn btn-danger btn-sm" onclick="resetVisits()">🗑️ Resetear contadores</button>
+            <button class="btn btn-outline" onclick="closeVisitsModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast"><span id="toastIcon">✅</span> <span id="toastMsg"></span></div>
+
+<script>
+// ═══ CONTRASEÑA ═══════════════════════════════════════
+const ADMIN_PASSWORD = 'admin123'; // Cámbiala aquí
+// ══════════════════════════════════════════════════════
+
+const DEFAULT_PRODUCTS = [
+    { id:1, title:"Dell Latitude i5 10ma Gen", img:"https://vendocomputadoras.com/wp-content/uploads/2026/07/PNG1.jpg", price:690, originalPrice:850, specs:["Intel Core i5-10ma","8GB RAM","256GB SSD","Pantalla 14\""], cat:["laptop","oferta"], badges:["oferta"], stock:true },
+    { id:2, title:"Dell Latitude 7480 i5 7ma Gen", img:"https://vendocomputadoras.com/wp-content/uploads/2026/07/PNG2.jpg", price:450, originalPrice:null, specs:["Intel Core i5-7ma","8GB RAM","256GB SSD NVMe","Pantalla 14\""], cat:["laptop"], badges:[], stock:true },
+    { id:3, title:"Dell Latitude 3410 i5 10ma Gen", img:"https://vendocomputadoras.com/wp-content/uploads/2026/07/PNG3.jpg", price:790, originalPrice:null, specs:["Intel Core i5-10ma","8GB RAM","512GB SSD NVMe","Pantalla 14\""], cat:["laptop"], badges:["bestseller"], stock:true },
+    { id:4, title:"Dell Latitude 5400 i7 8va Gen", img:"https://vendocomputadoras.com/wp-content/uploads/2026/07/PNG4.jpg", price:950, originalPrice:null, specs:["Intel Core i7-8va","16GB RAM","512GB SSD NVMe","Pantalla 14\""], cat:["laptop","premium"], badges:[], stock:true },
+    { id:5, title:"Dell Latitude 3410 i5 16GB", img:"https://vendocomputadoras.com/wp-content/uploads/2026/07/PNG5.jpg", price:790, originalPrice:null, specs:["Intel Core i5-10ma","16GB RAM","512GB SSD + 1TB HDD","Pantalla 14\""], cat:["laptop"], badges:[], stock:true },
+    { id:6, title:"Lenovo ThinkPad L490 i7 8va Gen", img:"https://vendocomputadoras.com/wp-content/uploads/2026/07/PNG6.jpg", price:890, originalPrice:null, specs:["Intel Core i7-8va","8GB RAM","512GB SSD NVMe","Pantalla 14\""], cat:["laptop","premium"], badges:[], stock:true },
+    { id:7, title:"Cooler Master CM Force i3 PC", img:"https://vendocomputadoras.com/wp-content/uploads/2026/07/PNG7.jpg", price:550, originalPrice:null, specs:["Intel Core i3","8GB RAM","256GB SSD + 500GB HDD","Torre Gaming"], cat:["pc"], badges:[], stock:true },
+    { id:8, title:"Antryx AOC Intel Core i5 PC", img:"https://vendocomputadoras.com/wp-content/uploads/2026/07/PNG8-1.jpg", price:500, originalPrice:null, specs:["Intel Core i5","8GB RAM","256GB SSD","Con Monitor AOC"], cat:["pc","oferta"], badges:["oferta"], stock:true },
+    { id:9, title:"Apple iMac A2125 Intel Core i9", img:"https://vendocomputadoras.com/wp-content/uploads/2026/07/PAGINA9.jpg", price:3490, originalPrice:null, specs:["Intel Core i9","32GB RAM","1TB SSD","AMD Radeon Pro Vega"], cat:["pc","premium"], badges:[], stock:true },
+    { id:10, title:"Lenovo ThinkCentre M920S i7 8va", img:"https://vendocomputadoras.com/wp-content/uploads/2026/07/PNG10-1.jpg", price:990, originalPrice:null, specs:["Intel Core i7-8va","8GB RAM","512GB SSD + 1TB HDD","Mini PC"], cat:["pc","premium"], badges:["bestseller"], stock:true },
+    { id:11, title:"Dell OptiPlex 3010 Intel Core i5", img:"https://vendocomputadoras.com/wp-content/uploads/2026/07/PNG11.jpg", price:590, originalPrice:null, specs:["Intel Core i5","8GB RAM","256GB SSD + 500GB HDD","Escritorio"], cat:["pc"], badges:[], stock:true },
+    { id:12, title:"HP EliteDesk Intel Core i5", img:"https://vendocomputadoras.com/wp-content/uploads/2026/07/PNG12.jpg", price:650, originalPrice:null, specs:["Intel Core i5","8GB RAM","256GB SSD","Mini PC"], cat:["pc"], badges:[], stock:true }
+];
+
+const STORAGE_KEY = 'mundodigital_products';
+const VISITS_KEY  = 'mundodigital_visits';
+
+let products = [];
+let deleteTargetId = null;
+let currentSpecs = [];
+
+function loadProducts() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    products = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_PRODUCTS));
+    // Asegurar que todos los productos tengan el campo stock
+    products = products.map(p => ({ stock: true, ...p }));
+    if (!saved) saveProducts();
+}
+function saveProducts() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); }
+
+// Visitas
+function getVisits() { return JSON.parse(localStorage.getItem(VISITS_KEY) || '{}'); }
+
+// Login
+function doLogin() {
+    const pw = document.getElementById('passwordInput').value;
+    if (pw === ADMIN_PASSWORD) {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('adminApp').classList.add('visible');
+        loadProducts(); renderTable(); updateStats();
+    } else {
+        document.getElementById('loginError').style.display = 'block';
+        document.getElementById('passwordInput').value = '';
+        document.getElementById('passwordInput').focus();
+    }
+}
+document.getElementById('passwordInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+function doLogout() {
+    document.getElementById('loginScreen').classList.remove('hidden');
+    document.getElementById('adminApp').classList.remove('visible');
+    document.getElementById('passwordInput').value = '';
+}
+
+// Stats
+function updateStats() {
+    const visits = getVisits();
+    const totalVisits = Object.values(visits).reduce((a, b) => a + b, 0);
+    document.getElementById('statTotal').textContent = products.length;
+    document.getElementById('statLaptops').textContent = products.filter(p => p.cat.includes('laptop')).length;
+    document.getElementById('statPCs').textContent = products.filter(p => p.cat.includes('pc')).length;
+    document.getElementById('statOfertas').textContent = products.filter(p => p.cat.includes('oferta')).length;
+    document.getElementById('statAgotados').textContent = products.filter(p => !p.stock).length;
+    document.getElementById('statVisitas').textContent = totalVisits;
+}
+
+// Toggle stock directo desde la tabla
+function toggleStock(id) {
+    const idx = products.findIndex(p => p.id === id);
+    if (idx === -1) return;
+    products[idx].stock = !products[idx].stock;
+    saveProducts();
+    renderTable();
+    updateStats();
+    showToast(products[idx].stock ? '✅' : '❌', `Stock actualizado: ${products[idx].stock ? 'Disponible' : 'Agotado'}`);
+}
+
+// Render tabla
+function renderTable() {
+    const tbody = document.getElementById('productTableBody');
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const visits = getVisits();
+    const filtered = products.filter(p => p.title.toLowerCase().includes(query) || (p.specs||[]).some(s => s.toLowerCase().includes(query)));
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="empty-icon">🔍</span><p>Sin resultados para "<b>${query}</b>"</p></div></td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = filtered.map(p => {
+        const cats = (p.cat||[]).map(c => `<span class="badge badge-${c}">${c}</span>`).join(' ');
+        const imgHtml = p.img
+            ? `<img src="${p.img}" alt="" class="product-thumb" loading="lazy" onerror="this.style.display='none'"><div class="product-thumb-placeholder" style="display:none;">📷</div>`
+            : `<div class="product-thumb-placeholder">📷</div>`;
+        const visitCount = visits[p.id] || 0;
+        const stockOn = p.stock !== false;
+
+        return `<tr>
+            <td>
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                    ${imgHtml}
+                    <div>
+                        <div style="font-weight:600;font-size:0.88rem;line-height:1.3;">${p.title}</div>
+                        <div style="color:var(--text-3);font-size:0.73rem;margin-top:0.1rem;">${(p.specs||[]).slice(0,2).join(' · ')}</div>
+                    </div>
+                </div>
+            </td>
+            <td>${cats}</td>
+            <td>
+                <div class="price-text">S/ ${p.price.toLocaleString('es-PE')}</div>
+                ${p.originalPrice ? `<div class="old-price-text">S/ ${p.originalPrice.toLocaleString('es-PE')}</div>` : ''}
+            </td>
+            <td>
+                <label class="stock-toggle" onclick="toggleStock(${p.id})" title="${stockOn ? 'Clic para marcar como Agotado' : 'Clic para marcar como Disponible'}">
+                    <div class="toggle-track ${stockOn ? 'on' : ''}">
+                        <div class="toggle-thumb"></div>
+                    </div>
+                    <span class="toggle-label">${stockOn ? 'Disponible' : 'Agotado'}</span>
+                </label>
+            </td>
+            <td><span class="visits-badge">👁 ${visitCount}</span></td>
+            <td>
+                <div class="actions-cell">
+                    <button class="btn btn-outline btn-sm" onclick="editProduct(${p.id})">✏️ Editar</button>
+                    <button class="btn btn-danger btn-sm" onclick="askDelete(${p.id}, '${p.title.replace(/'/g,"\\'")}')">🗑️</button>
+                </div>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+// Modal producto
+function openProductModal() {
+    currentSpecs = [];
+    document.getElementById('editId').value = '';
+    document.getElementById('f_title').value = '';
+    document.getElementById('f_price').value = '';
+    document.getElementById('f_originalPrice').value = '';
+    document.getElementById('f_cat').value = 'laptop';
+    document.getElementById('f_badge').value = '';
+    document.getElementById('f_stock').value = '1';
+    document.getElementById('f_img').value = '';
+    document.getElementById('imgPreviewWrap').style.display = 'none';
+    document.getElementById('formError').style.display = 'none';
+    document.getElementById('modalTitle').textContent = 'Agregar Producto';
+    renderSpecTags();
+    document.getElementById('productModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => document.getElementById('f_title').focus(), 100);
+}
+
+function editProduct(id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    currentSpecs = [...(p.specs||[])];
+    document.getElementById('editId').value = p.id;
+    document.getElementById('f_title').value = p.title;
+    document.getElementById('f_price').value = p.price;
+    document.getElementById('f_originalPrice').value = p.originalPrice || '';
+    document.getElementById('f_badge').value = (p.badges&&p.badges[0]) ? p.badges[0] : '';
+    document.getElementById('f_img').value = p.img || '';
+    document.getElementById('f_stock').value = p.stock !== false ? '1' : '0';
+    document.getElementById('formError').style.display = 'none';
+    document.getElementById('modalTitle').textContent = 'Editar Producto';
+    const cats = (p.cat||[]).join(',');
+    const sel = document.getElementById('f_cat');
+    let found = false;
+    for (let opt of sel.options) { if (opt.value === cats) { sel.value = cats; found = true; break; } }
+    if (!found) sel.value = 'laptop';
+    if (p.img) { document.getElementById('imgPreview').src = p.img; document.getElementById('imgPreviewWrap').style.display = 'block'; }
+    else { document.getElementById('imgPreviewWrap').style.display = 'none'; }
+    renderSpecTags();
+    document.getElementById('productModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeProductModal() { document.getElementById('productModal').classList.remove('active'); document.body.style.overflow = ''; }
+
+document.getElementById('f_img').addEventListener('input', function() {
+    if (this.value.startsWith('http')) { document.getElementById('imgPreview').src = this.value; document.getElementById('imgPreviewWrap').style.display = 'block'; }
+    else { document.getElementById('imgPreviewWrap').style.display = 'none'; }
+});
+
+function renderSpecTags() {
+    document.getElementById('specTags').innerHTML = currentSpecs.map((s,i) =>
+        `<span class="tag">${s}<span class="tag-remove" onclick="removeSpec(${i})">✕</span></span>`
+    ).join('');
+}
+function addSpec() { const v = document.getElementById('specInput').value.trim(); if (v && !currentSpecs.includes(v)) { currentSpecs.push(v); renderSpecTags(); } document.getElementById('specInput').value = ''; document.getElementById('specInput').focus(); }
+function removeSpec(i) { currentSpecs.splice(i,1); renderSpecTags(); }
+document.getElementById('specInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addSpec(); } });
+
+function saveProduct() {
+    const title = document.getElementById('f_title').value.trim();
+    const price = parseFloat(document.getElementById('f_price').value);
+    const originalPrice = parseFloat(document.getElementById('f_originalPrice').value) || null;
+    const catVal = document.getElementById('f_cat').value;
+    const badge = document.getElementById('f_badge').value;
+    const img = document.getElementById('f_img').value.trim();
+    const stock = document.getElementById('f_stock').value === '1';
+    const editId = document.getElementById('editId').value;
+
+    if (!title) { showFormError('El nombre es obligatorio.'); return; }
+    if (!price || price <= 0) { showFormError('Ingresa un precio válido.'); return; }
+    if (!img) { showFormError('La URL de la imagen es obligatoria.'); return; }
+
+    const cat = catVal.split(',').filter(Boolean);
+    const badges = badge ? [badge] : [];
+
+    if (editId) {
+        const idx = products.findIndex(p => p.id === parseInt(editId));
+        if (idx !== -1) products[idx] = { ...products[idx], title, price, originalPrice, cat, badges, img, specs: currentSpecs, stock };
+        showToast('✅', 'Producto actualizado');
+    } else {
+        const newId = Math.max(...products.map(p => p.id), 0) + 1;
+        products.push({ id: newId, title, price, originalPrice, cat, badges, img, specs: currentSpecs, stock });
+        showToast('✅', 'Producto agregado');
+    }
+    saveProducts(); renderTable(); updateStats(); closeProductModal();
+}
+
+function showFormError(msg) { const el = document.getElementById('formError'); el.textContent = '⚠️ ' + msg; el.style.display = 'block'; }
+
+// Eliminar
+function askDelete(id, name) {
+    deleteTargetId = id;
+    document.getElementById('confirmText').textContent = `Vas a eliminar "${name}". Esta acción no se puede deshacer.`;
+    document.getElementById('confirmOverlay').classList.add('active');
+}
+function closeConfirm() { deleteTargetId = null; document.getElementById('confirmOverlay').classList.remove('active'); }
+function confirmDelete() {
+    if (deleteTargetId === null) return;
+    products = products.filter(p => p.id !== deleteTargetId);
+    saveProducts(); renderTable(); updateStats(); closeConfirm();
+    showToast('🗑️', 'Producto eliminado');
+}
+
+// Visitas modal
+function openVisitsModal() {
+    const visits = getVisits();
+    const sorted = [...products].sort((a,b) => (visits[b.id]||0) - (visits[a.id]||0));
+    const max = Math.max(...sorted.map(p => visits[p.id]||0), 1);
+    document.getElementById('visitsChart').innerHTML = sorted.map(p => {
+        const v = visits[p.id] || 0;
+        const pct = Math.round((v / max) * 100);
+        return `<div class="visit-row">
+            <div class="visit-name" title="${p.title}">${p.title}</div>
+            <div class="visit-bar-wrap"><div class="visit-bar" style="width:${pct}%"></div></div>
+            <div class="visit-count">${v}</div>
+        </div>`;
+    }).join('');
+    document.getElementById('visitsModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+function closeVisitsModal() { document.getElementById('visitsModal').classList.remove('active'); document.body.style.overflow = ''; }
+function resetVisits() { if (confirm('¿Resetear todos los contadores de visitas?')) { localStorage.removeItem(VISITS_KEY); updateStats(); openVisitsModal(); showToast('🔄', 'Contadores reseteados'); } }
+
+// Exportar / Importar
+function exportData() {
+    const blob = new Blob([JSON.stringify(products, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `catalogo-${new Date().toISOString().slice(0,10)}.json`; a.click();
+    URL.revokeObjectURL(url); showToast('⬇️', 'Catálogo exportado');
+}
+function importData(event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => { try { const data = JSON.parse(e.target.result); if (!Array.isArray(data)) throw new Error(); products = data.map(p=>({stock:true,...p})); saveProducts(); renderTable(); updateStats(); showToast('⬆️', `${data.length} productos importados`); } catch { showToast('❌', 'Archivo JSON inválido'); } };
+    reader.readAsText(file); event.target.value = '';
+}
+function publishToSite() { localStorage.setItem(STORAGE_KEY, JSON.stringify(products)); showToast('🚀', '¡Publicado! Abre la tienda para ver los cambios'); }
+
+// Toast
+function showToast(icon, msg) {
+    document.getElementById('toastIcon').textContent = icon;
+    document.getElementById('toastMsg').textContent = msg;
+    const t = document.getElementById('toast'); t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeProductModal(); closeConfirm(); closeVisitsModal(); } });
+</script>
+</body>
+</html>
